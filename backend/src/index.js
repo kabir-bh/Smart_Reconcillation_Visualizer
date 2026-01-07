@@ -248,17 +248,28 @@ function reconcile({ aRows, bRows, mapping, mode, rules }) {
       });
     } else {
       statusCounts.MISMATCH++;
-      results.push({
-        status: "MISMATCH",
-        key,
-        reason: mismatches.join(", "),
-        diffs: {
-          amount: amountCmp,
-          date: dateCmp
-        },
-        a,
-        b
-      });
+      const reasons = [];
+
+if (a.amount !== b.amount) {
+  reasons.push(
+    `Amount differs (${a.amount} vs ${b.amount})`
+  );
+}
+
+if (a.date !== b.date) {
+  reasons.push(
+    `Date differs (${a.date} vs ${b.date})`
+  );
+}
+
+results.push({
+  status: "mismatch",
+  key,
+  a,
+  b,
+  reason: reasons.join(" | "),
+});
+
     }
   }
 
@@ -283,6 +294,34 @@ function reconcile({ aRows, bRows, mapping, mode, rules }) {
     results
   };
 }
+
+function buildMismatchReason(a, b) {
+  const reasons = [];
+
+  // Amount
+  if (a.amount !== b.amount) {
+    const diff = Math.abs(Number(a.amount) - Number(b.amount));
+    reasons.push(`Amount differs by ${diff}`);
+  }
+
+  // Date
+  if (a.date !== b.date) {
+    const days =
+      Math.abs(
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      ) / (1000 * 60 * 60 * 24);
+
+    reasons.push(`Date differs by ${Math.round(days)} days`);
+  }
+
+  // Description (optional)
+  if (a.description && b.description && a.description !== b.description) {
+    reasons.push("Description mismatch");
+  }
+
+  return reasons.join(", ");
+}
+
 
 /** ---------- Routes ---------- **/
 
