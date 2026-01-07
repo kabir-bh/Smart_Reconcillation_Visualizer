@@ -1,0 +1,5 @@
+transaction_id,date,amount,description
+TXN001,2025-01-01,1000,Office Supplies
+TXN002,2025-01-02,255,Lunch (tip included)
+TXN005,2025-01-05,120,Snacks
+TXN004,2025-01-04,400,Taxi

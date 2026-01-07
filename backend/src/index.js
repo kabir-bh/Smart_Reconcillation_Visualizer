@@ -419,4 +419,4 @@ app.get("/api/export/:sessionId", (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Backend running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log('Backend running on https://smart-reconcillation-visualizer-5.onrender.com/'));
