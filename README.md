@@ -1,4 +1,4 @@
-# Smart Reconciliation Visualizer
+# Smart Reconciliation Visualizer (a UI forward reconciliation tool)
 
 I see myself as a customer first — and with that mindset, I built this project to solve a very real problem:  
 **reconciling two datasets and clearly understanding what matched, what mismatched, and what is missing.**
