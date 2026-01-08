@@ -70,3 +70,10 @@ Click a row to view side-by-side values from Dataset A and B.
 cd backend
 npm install
 npm run dev
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+
