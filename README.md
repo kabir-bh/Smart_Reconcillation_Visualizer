@@ -32,24 +32,26 @@ In real-world data (bank statements, ledgers, reports), records are rarely clean
 ### 1. Upload
 Upload Dataset A and Dataset B (CSV files).
 
-📸 `screenshots/start.png`
+![Upload datasets](screenshots/start.png)
 
 ### 2. Match Strategy
 Choose:
 - **Auto Match** (ID-based)
 - **Custom Rules** (Amount / Date based)
 
-📸 `screenshots/second_step.png`
+![Match strategy selection](screenshots/second_step.png)
+
 
 ### 3. Reconcile & Review
 View summary cards and detailed reconciliation table.
 
-📸 `screenshots/results.png`
+![Reconciliation results](screenshots/results.png)
 
 ### 4. Record Details
 Click a row to view side-by-side values from Dataset A and B.
 
-📸 `screenshots/last.png`
+![Record details](screenshots/last.png)
+
 
 ---
 
