@@ -65,7 +65,7 @@ Click a row to view side-by-side values from Dataset A and B.
 
 ## Run Locally
 
-### Backend
+### Backend and Frontend
 ```bash
 cd backend
 npm install
