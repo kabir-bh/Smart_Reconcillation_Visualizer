@@ -5,19 +5,26 @@ import Papa from "papaparse";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
+// Flow map:
+// 1) Upload CSVs -> /api/sessions -> parse + profile + sessionId.
+// 2) Reconcile -> /api/reconcile -> match + summarize + store last result.
+// 3) Export -> /api/export/:sessionId -> CSV download of last result.
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
 
+// Keep uploads in memory; CSVs are parsed immediately and not persisted.
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
-// In-memory sessions
+// In-memory sessions keyed by sessionId (no DB in this app).
 const sessions = new Map();
 
 /** ---------- Helpers ---------- **/
+// Normalize CSV header labels for consistent matching.
 function normalizeHeader(h) {
   return String(h ?? "").trim();
 }
+// Parse numeric strings safely (handles commas and blanks).
 function toNumber(v) {
   if (v === null || v === undefined) return null;
   const s = String(v).trim();
@@ -27,6 +34,7 @@ function toNumber(v) {
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : null;
 }
+// Parse date strings into YYYY-MM-DD (best effort).
 function normalizeDate(v) {
   if (v === null || v === undefined) return null;
   const s = String(v).trim();
@@ -36,11 +44,15 @@ function normalizeDate(v) {
   if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10); // YYYY-MM-DD
   return null;
 }
+// Convert value to a trimmed string, treating null/undefined as empty.
 function stringify(v) {
   if (v === null || v === undefined) return "";
   return String(v).trim();
 }
 
+// Reading CSV files
+
+// Parse a CSV upload into fields + row objects (adds __rowId for tracing).
 function parseCsvBuffer(buffer) {
   const text = buffer.toString("utf-8");
   const result = Papa.parse(text, {
@@ -57,6 +69,7 @@ function parseCsvBuffer(buffer) {
   return { fields, rows };
 }
 
+// Profile a dataset to show quick stats and detected columns on the UI.
 function profile(rows, fields) {
   const rowCount = rows.length;
   const sampleRows = rows.slice(0, 5);
@@ -113,6 +126,7 @@ function profile(rows, fields) {
     if (dates.length) { dateMin = dates[0]; dateMax = dates[dates.length - 1]; }
   }
 
+  // This info is shown on frontend later
   return {
     rowCount,
     fields,
@@ -124,6 +138,7 @@ function profile(rows, fields) {
   };
 }
 
+// Resolve a field mapping for "a" and "b" sides with sensible defaults.
 function pickField(mapping, key, fallback) {
   // mapping example: { id: {a:"transaction_id", b:"txn_id"}, amount:{...}, date:{...}, description:{...}}
   const m = mapping?.[key];
@@ -131,6 +146,7 @@ function pickField(mapping, key, fallback) {
   return { a: fallback?.a || null, b: fallback?.b || null };
 }
 
+// Build a composite key for custom matching rules.
 function buildKey(record, fields, rules) {
   // fields: array of field names used to build composite key
   const parts = [];
@@ -143,6 +159,8 @@ function buildKey(record, fields, rules) {
   return parts.join("||");
 }
 
+//Reconcile           
+// Core reconciliation engine for auto ID matching or custom composite keys.
 function reconcile({ aRows, bRows, mapping, mode, rules }) {
   // rules: { amountTolerance:number, dateToleranceDays:number, compositeKeysA:[...], compositeKeysB:[...]}
   const amountTol = Number(rules?.amountTolerance ?? 0);
@@ -166,6 +184,7 @@ function reconcile({ aRows, bRows, mapping, mode, rules }) {
 
   const statusCounts = { MATCHED: 0, MISMATCH: 0, MISSING_IN_B: 0, MISSING_IN_A: 0 };
 
+  //Tolerance
   const compareAmounts = (a, b) => {
     const an = toNumber(a), bn = toNumber(b);
     if (an === null || bn === null) return { ok: false, reason: "AMOUNT_MISSING" };
@@ -184,7 +203,7 @@ function reconcile({ aRows, bRows, mapping, mode, rules }) {
     return { ok: dd <= dateTolDays, diffDays: dd, ad, bd };
   };
 
-  // Build lookup for B based on chosen mode
+  // Build lookup for B based on chosen mode.
   let bIndex = new Map();
 
   if (mode === "auto") {
@@ -208,6 +227,7 @@ function reconcile({ aRows, bRows, mapping, mode, rules }) {
   const aKeyField = (mode === "auto") ? idField.a : null;
   const keysA = (mode === "custom") ? (rules?.compositeKeysA || []) : null;
 
+  // The matching loop: walk A and try to find a matching B.
   for (const a of aRows) {
     const key = (mode === "auto")
       ? stringify(a[aKeyField] ?? "")
@@ -229,7 +249,7 @@ function reconcile({ aRows, bRows, mapping, mode, rules }) {
 
     bUsed.add(b.__rowId);
 
-    // Validate fields
+    // Validate fields using tolerance rules.
     const amountCmp = compareAmounts(a[amountField.a], b[amountField.b]);
     const dateCmp = compareDates(a[dateField.a], b[dateField.b]);
 
@@ -273,7 +293,7 @@ results.push({
     }
   }
 
-  // Missing in A: any B not used
+  // Missing in A: any B not used.
   for (const b of bRows) {
     if (!bUsed.has(b.__rowId)) {
       statusCounts.MISSING_IN_A++;
@@ -287,7 +307,7 @@ results.push({
     }
   }
 
-  // Summary
+  // Summary counts for the UI.
   const total = results.length;
   return {
     summary: { ...statusCounts, total },
@@ -295,6 +315,7 @@ results.push({
   };
 }
 
+// Optional helper to generate a human-readable mismatch reason.
 function buildMismatchReason(a, b) {
   const reasons = [];
 
@@ -325,8 +346,10 @@ function buildMismatchReason(a, b) {
 
 /** ---------- Routes ---------- **/
 
+//"are you alive"
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
+// Create a new session by ingesting two CSV files.
 app.post("/api/sessions", upload.fields([{ name: "fileA", maxCount: 1 }, { name: "fileB", maxCount: 1 }]), (req, res) => {
   try {
     const fileA = req.files?.fileA?.[0];
@@ -355,6 +378,9 @@ app.post("/api/sessions", upload.fields([{ name: "fileA", maxCount: 1 }, { name:
   }
 });
 
+
+//RECONCILE!
+// Run reconciliation for a previously uploaded session.
 app.post("/api/reconcile", (req, res) => {
   const schema = z.object({
     sessionId: z.string().min(3),
@@ -389,6 +415,9 @@ app.post("/api/reconcile", (req, res) => {
   }
 });
 
+
+//CSV report to download
+// Export the last reconciliation as CSV, optionally filtered by status.
 app.get("/api/export/:sessionId", (req, res) => {
   const { sessionId } = req.params;
   const filter = String(req.query.filter || "ALL");

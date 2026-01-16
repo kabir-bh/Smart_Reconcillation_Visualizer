@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "https://smart-reconcillation-visualizer-5.onrender.com";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
 export async function createSession(fileA, fileB) {
   const form = new FormData();

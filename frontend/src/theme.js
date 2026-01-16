@@ -1,5 +1,6 @@
 import { createTheme } from "@mui/material/styles";
 
+// App-wide MUI theme; tuned for a dark, glassy UI.
 export const theme = createTheme({
   palette: {
     mode: "light",
