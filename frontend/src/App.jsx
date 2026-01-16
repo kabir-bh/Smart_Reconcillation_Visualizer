@@ -1,4 +1,4 @@
-  import React, { useMemo, useState, useEffect } from "react";
+  import React, { useMemo, useState, useEffect, useRef } from "react";
   import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
   import {
     Box, Container, CssBaseline, ThemeProvider, Typography, Stepper, Step, StepLabel,
@@ -10,6 +10,7 @@
   import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
   import TuneIcon from "@mui/icons-material/Tune";
   import DownloadIcon from "@mui/icons-material/Download";
+  import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
   import { DataGrid } from "@mui/x-data-grid";
   import { PieChart, Pie, ResponsiveContainer, Cell, Tooltip as RTooltip } from "recharts";
   import { motion, AnimatePresence } from "framer-motion";
@@ -236,43 +237,61 @@
   }
 
   // Mock auth screen for login/signup (no backend).
-  function AuthCard({ mode, onModeChange, onSubmit }) {
+  function AuthCard({ mode, onModeChange, onSubmit, onAbout }) {
     const isSignup = mode === "signup";
 
     return (
-      <Glass sx={{ maxWidth: 480, mx: "auto" }}>
-        <Stack spacing={2}>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            {isSignup ? "Create your account" : "Welcome back"}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {isSignup
-              ? "Mock signup. No data is saved yet."
-              : "Mock login. Use any email/password to continue."}
-          </Typography>
+      <Box
+        sx={{
+          minHeight: { xs: 520, md: 620 },
+          display: "grid",
+          placeItems: "center",
+        }}
+      >
+        <Box sx={{ display: "grid", gap: 2, placeItems: "center", width: "100%" }}>
+          <Glass sx={{ p: 3, maxWidth: 520, width: "100%" }}>
+            <Stack spacing={2} alignItems="center">
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              {isSignup ? "Create your account" : "Welcome back"}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {isSignup
+                ? "Mock signup. No data is saved yet."
+                : "Mock login. Use any email/password to continue."}
+            </Typography>
 
-          {isSignup && (
-            <TextField label="Full name" fullWidth />
-          )}
-          <TextField label="Email" type="email" fullWidth />
-          <TextField label="Password" type="password" fullWidth />
-          {isSignup && (
-            <TextField label="Confirm password" type="password" fullWidth />
-          )}
+            {isSignup && (
+              <TextField label="Full name" fullWidth />
+            )}
+            <TextField label="Email" type="email" fullWidth />
+            <TextField label="Password" type="password" fullWidth />
+            {isSignup && (
+              <TextField label="Confirm password" type="password" fullWidth />
+            )}
 
-          <Button variant="contained" size="large" onClick={onSubmit}>
-            {isSignup ? "Create account" : "Log in"}
-          </Button>
-
-          <Divider sx={{ opacity: 0.3 }} />
-          <Typography variant="body2" color="text.secondary">
-            {isSignup ? "Already have an account?" : "New here?"}{" "}
-            <Button variant="text" onClick={() => onModeChange(isSignup ? "login" : "signup")}>
-              {isSignup ? "Log in" : "Create account"}
+            <Button variant="contained" size="large" onClick={onSubmit}>
+              {isSignup ? "Create account" : "Log in"}
             </Button>
-          </Typography>
-        </Stack>
-      </Glass>
+
+            <Divider sx={{ opacity: 0.3 }} />
+            <Typography variant="body2" color="text.secondary">
+              {isSignup ? "Already have an account?" : "New here?"}{" "}
+              <Button variant="text" onClick={() => onModeChange(isSignup ? "login" : "signup")}>
+                {isSignup ? "Log in" : "Create account"}
+              </Button>
+            </Typography>
+            </Stack>
+          </Glass>
+          <Button
+            variant="text"
+            onClick={onAbout}
+            endIcon={<KeyboardArrowDownIcon />}
+            sx={{ opacity: 0.8 }}
+          >
+            About
+          </Button>
+        </Box>
+      </Box>
     );
   }
 
@@ -284,6 +303,7 @@
     const navigate = useNavigate();
     const location = useLocation();
     const [isAtBottom, setIsAtBottom] = useState(false);
+    const aboutRef = useRef(null);
 
 
     const [fileA, setFileA] = useState(null);
@@ -604,6 +624,9 @@
                     </Button>
                   )}
                 </Stack>
+                <Typography variant="body1" sx={{ opacity: 0.8 }}>
+                  Turn messy ledgers into clear answers in minutes.
+                </Typography>
                 
               </Stack>
 
@@ -630,15 +653,30 @@
                     isAuthed ? (
                       <Navigate to="/upload" replace />
                     ) : (
-                      <AuthCard
-                        mode={authMode}
-                        onModeChange={setAuthMode}
-                        onSubmit={() => {
-                          setIsAuthed(true);
-                          setToast({ open: true, msg: "Mock auth success.", severity: "success" });
-                          navigate("/upload");
-                        }}
-                      />
+                      <>
+                        <AuthCard
+                          mode={authMode}
+                          onModeChange={setAuthMode}
+                          onSubmit={() => {
+                            setIsAuthed(true);
+                            setToast({ open: true, msg: "Mock auth success.", severity: "success" });
+                            navigate("/upload");
+                          }}
+                          onAbout={() => aboutRef.current?.scrollIntoView({ behavior: "smooth" })}
+                        />
+                        <Box
+                          ref={aboutRef}
+                          sx={{
+                            mt: 4,
+                            minHeight: "100vh",
+                            backgroundImage: "url(/assets/recon-preview.png)",
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                            backgroundRepeat: "no-repeat",
+                            backgroundColor: "transparent",
+                          }}
+                        />
+                      </>
                     )
                   }
                 />
