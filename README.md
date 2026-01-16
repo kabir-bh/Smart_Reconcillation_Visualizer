@@ -6,7 +6,7 @@ I see myself as a customer first — and with that mindset, I built this project
 In real-world data (bank statements, ledgers, reports), records are rarely clean. This tool makes reconciliation **visual, intuitive, and explainable**.
 
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-green)](https://lively-boba-8c8442.netlify.app/)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-green)](https://smart-reconcile.netlify.app/auth)
 
 
 ---
