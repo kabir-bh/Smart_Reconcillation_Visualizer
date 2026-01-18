@@ -7,4 +7,4 @@ npm install
 npm run dev
 ```
 
-Server: http://localhost:8080
+Server: https://smart-reconcillation-visualizer-5.onrender.com/

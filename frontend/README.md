@@ -10,5 +10,5 @@ npm run dev
 Set API base (optional):
 Create `.env`:
 ```
-VITE_API_BASE=http://localhost:8080
+VITE_API_BASE=https://smart-reconcillation-visualizer-5.onrender.com/
 ```
